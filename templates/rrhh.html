@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>RRHH - Registro Facial</title>
+<style>
+*{box-sizing:border-box;}
+body{
+  background: url('/static/rrhh_bg.jpg') no-repeat center fixed;
+  background-size: cover;
+  font-family:'Segoe UI', sans-serif;
+  color:white;
+  text-align:center;
+  margin:0;
+  padding:10px;
+}
+.panel{
+  background: rgba(0,0,0,0.85);
+  max-width: 100%;
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+}
+h2{margin:10px 0 20px 0;font-size:24px;}
+input{
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: none;
+  font-size: 16px;
+}
+label{
+  display: block;
+  font-size: 13px;
+  opacity: 0.9;
+  text-align: left;
+  margin-top: 10px;
+}
+video,canvas{
+  width: 100%;
+  margin-top: 15px;
+  border: 2px solid lime;
+  border-radius: 10px;
+  max-height: 80vh;
+}
+button{
+  width: 100%;
+  padding: 12px;
+  font-weight: bold;
+  margin-top: 10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background: limegreen;
+  color:black;
+  transition:0.3s;
+  font-size: 16px;
+}
+button:hover{background: green;}
+#estado{margin:15px 0;font-weight:bold;font-size:14px;}
+#reintentar{background:orange;color:black;display:none;}
+#reintentar:hover{background:darkorange;}
+@media(max-width:600px){
+  .panel{padding:15px;margin:15px auto;}
+  h2{font-size:20px;}
+  input,button{font-size:14px;padding:10px;}
+}
+</style>
+</head>
+<body>
+<div class="panel">
+<h2>👤 Registro RRHH</h2>
+<label>Usuario</label><input id="usuario">
+<label>Contraseña</label><input id="password" type="password">
+<label>Nombre</label><input id="nombre">
+<label>Apellidos</label><input id="apellidos">
+<label>Fecha de nacimiento</label><input id="nacimiento" type="date">
+<label>Cargo</label><input id="cargo">
+<p id="estado">📷 Iniciando cámara...</p>
+<button id="reintentar" onclick="iniciarCamara()">🔄 Reintentar Acceso a Cámara</button>
+<video id="v" autoplay playsinline muted></video>
+<canvas id="c" style="display:none;"></canvas>
+</div>
+<script>
+const v=document.getElementById("v"),c=document.getElementById("c"),ctx=c.getContext("2d"),estado=document.getElementById("estado"),reintentar=document.getElementById("reintentar");
+const usuario=document.getElementById("usuario"),password=document.getElementById("password"),nombre=document.getElementById("nombre"),apellidos=document.getElementById("apellidos"),nacimiento=document.getElementById("nacimiento"),cargo=document.getElementById("cargo");
+
+function iniciarCamara(){
+  estado.innerText="📷 Solicitando acceso a cámara...";
+  reintentar.style.display="none";
+  navigator.mediaDevices.getUserMedia({
+    video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"},
+    audio:false
+  }).then(s=>{
+    v.srcObject=s;
+    estado.innerText="✅ Cámara lista - Mire a la cámara y parpadee 3 veces";
+    console.log("Cámara iniciada correctamente");
+  }).catch(err=>{
+    estado.innerText="❌ Error: "+err.name+" - "+err.message;
+    reintentar.style.display="block";
+    console.error("Error de cámara:",err);
+    if(err.name==="NotAllowedError") estado.innerText="❌ Permiso denegado. Haga clic en 'Reintentar' después de conceder permiso en el navegador.";
+    if(err.name==="NotFoundError") estado.innerText="❌ No se encontró cámara. Conecte una cámara USB.";
+  });
+}
+
+iniciarCamara();
+
+setInterval(async()=>{
+ if(!usuario.value || !v.srcObject) return;
+ c.width=v.videoWidth;c.height=v.videoHeight;ctx.drawImage(v,0,0);
+ const res=await fetch("/rrhh_procesar",{method:"POST",headers:{"Content-Type":"application/json"},
+ body:JSON.stringify({
+   usuario:usuario.value,password:password.value,nombre:nombre.value,apellidos:apellidos.value,
+   nacimiento:nacimiento.value,cargo:cargo.value,frame:c.toDataURL("image/jpeg")
+ })});
+ const d=await res.json();
+ estado.innerText=d.estado;
+ if(d.puntos){ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle="lime";d.puntos.forEach(p=>ctx.fillRect(p[0],p[1],2,2));}
+},500);
+</script>
+</body>
+</html>
+

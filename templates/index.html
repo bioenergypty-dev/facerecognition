@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FaceID System</title>
+<style>
+*{box-sizing:border-box;}
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: url('/static/index_bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+h1 {
+    margin: 0 0 40px 0;
+    font-size: clamp(32px, 8vw, 48px);
+    text-shadow: 2px 2px 8px black;
+}
+.menu{
+    max-width: 300px;
+    margin: 0 auto;
+}
+a {
+    display: block;
+    margin: 15px auto;
+    font-size: clamp(16px, 5vw, 22px);
+    color: white;
+    text-decoration: none;
+    width: 100%;
+    max-width: 250px;
+    padding: 15px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 12px;
+    transition: 0.3s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+}
+a:active,a:hover {
+    background: rgba(0,0,0,0.8);
+    transform: translateY(-2px);
+}
+@media(max-width:600px){
+    h1{font-size:28px;}
+    a{font-size:16px;}
+}
+</style>
+</head>
+<body>
+<h1>👁️ FaceID System</h1>
+<a href="/rrhh">➡ RRHH</a>
+<a href="/vigilancia">➡ Vigilancia</a>
+<a href="/admin">🛠️ Panel Administrador</a>
+</body>
+</html>
+
