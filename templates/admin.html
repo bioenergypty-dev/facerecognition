@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel Administrador</title>
+<style>
+body{font-family:'Segoe UI';background:#111;color:white;padding:20px;margin:0;}
+h1,h2{margin-top:20px;text-align:center;}
+table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+th,td{border:1px solid #555;padding:6px;text-align:left;font-size:13px;}
+th{background:#333;}
+a{color:cyan;text-decoration:none;margin-right:20px;padding:6px 10px;background:rgba(0,0,0,0.5);border-radius:6px;}
+a:hover{background:rgba(0,0,0,0.8);}
+</style>
+</head>
+<body>
+<h1>📊 Panel Administrador - FaceID System</h1>
+<div style="text-align:center;margin-bottom:30px;">
+<a href="/download/rrhh">Descargar CSV RRHH</a>
+<a href="/download/vig">Descargar CSV Vigilancia</a>
+</div>
+
+<h2>📋 RRHH</h2>
+<table>
+<tr>
+  <th>Usuario</th><th>Contraseña</th><th>Nombre</th><th>Apellidos</th><th>Fecha Nac.</th>
+  <th>Fecha Alta</th><th>Cargo</th><th>Hora Captura</th><th>Coordenadas</th>
+</tr>
+{% for r in rrhh %}
+<tr>
+  <td>{{r['usuario']}}</td><td>{{r['contraseña']}}</td><td>{{r['nombre']}}</td>
+  <td>{{r['apellidos']}}</td><td>{{r['fecha_nacimiento']}}</td>
+  <td>{{r['fecha_alta']}}</td><td>{{r['cargo']}}</td>
+  <td>{{r['hora']}}</td><td>{{r['coordenadas']}}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>🛡️ Vigilancia</h2>
+<table>
+<tr>
+  <th>Usuario</th><th>Evento</th><th>Fecha</th>
+</tr>
+{% for v in vig %}
+<tr>
+  <td>{{v['usuario']}}</td><td>{{v['evento']}}</td><td>{{v['fecha']}}</td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>
+
