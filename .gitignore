@@ -1,0 +1,34 @@
+# Entorno virtual
+.venv*/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Datos locales
+capturas/*
+!capturas/.gitkeep
+data/*.csv
+*.log
+
+# Render
+.render/
+
+# Archivos temporales
+*.tmp
+*.bak
+
+# Permitir modelos de ML (si existen)
+!models/

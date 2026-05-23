@@ -137,4 +137,10 @@ def vig_procesar():
             w=csv.writer(f)
             if not existe:
                 w.writerow(["usuario","evento","fecha"])
-            w.writerow([d["usuario"],d["event
+            w.writerow([d["usuario"],d["evento"],datetime.now()])
+
+    return jsonify({"estado":estado,"puntos":pts})
+
+if __name__=="__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
