@@ -47,9 +47,108 @@ CAP = os.path.join(BASE, "capturas")
 CSV_RRHH = os.path.join(DATA, "empleados.csv")
 CSV_VIG = os.path.join(DATA, "registros_vigilancia.csv")
 
+HEADER_LABELS = {
+    "usuario": "Usuario",
+    "contraseña": "Contraseña",
+    "password": "Contraseña",
+    "nombre": "Nombre",
+    "apellidos": "Apellidos",
+    "apellido": "Apellidos",
+    "numero_id": "Número ID",
+    "cargo": "Cargo",
+    "fecha_nacimiento": "Fecha Nac.",
+    "fecha_alta": "Fecha Alta",
+    "hora": "Hora Captura",
+    "coordenadas": "Coordenadas",
+    "evento": "Evento",
+    "fecha": "Fecha"
+}
+
 os.makedirs(DATA, exist_ok=True)
 os.makedirs(os.path.join(CAP, "rrhh"), exist_ok=True)
 os.makedirs(os.path.join(CAP, "vigilancia"), exist_ok=True)
+
+def normalizar_cabecera(nombre):
+    nombre = nombre.strip().lstrip("\ufeff").lower()
+    equivalencias = {
+        "password": "contraseña",
+        "contraseña": "contraseña",
+        "apellido": "apellidos",
+        "apellidos": "apellidos",
+        "fecha nacimiento": "fecha_nacimiento",
+        "fecha nac": "fecha_nacimiento",
+        "fecha_nacimiento": "fecha_nacimiento",
+        "fecha alta": "fecha_alta",
+        "fecha_alta": "fecha_alta",
+        "numero id": "numero_id",
+        "numero_id": "numero_id",
+        "numero de id": "numero_id",
+        "cargo": "cargo",
+        "nombre": "nombre",
+        "usuario": "usuario",
+        "hora": "hora",
+        "coordenadas": "coordenadas"
+    }
+    return equivalencias.get(nombre, nombre.replace(" ", "_").replace("-", "_").lower())
+
+
+def normalizar_fila_rrhh(row):
+    if "password" in row and "contraseña" not in row:
+        row["contraseña"] = row.get("password", "")
+    if "apellido" in row and "apellidos" not in row:
+        row["apellidos"] = row.get("apellido", "")
+
+    row["usuario"] = row.get("usuario", "")
+    row["contraseña"] = row.get("contraseña", row.get("password", ""))
+    row["nombre"] = row.get("nombre", "")
+    row["apellidos"] = row.get("apellidos", row.get("apellido", ""))
+    row["numero_id"] = row.get("numero_id", row.get("numero id", ""))
+    row["cargo"] = row.get("cargo", "")
+    row["fecha_nacimiento"] = row.get("fecha_nacimiento", "")
+    row["fecha_alta"] = row.get("fecha_alta", "")
+    row["hora"] = row.get("hora", "")
+    row["coordenadas"] = row.get("coordenadas", "")
+    return row
+
+
+def leer_csv(path, extra_headers=None):
+    if not os.path.exists(path):
+        return [], []
+
+    with open(path, "r", encoding="utf-8") as f:
+        lector = csv.reader(f)
+        try:
+            cabeceras_raw = [h.strip().lstrip("\ufeff") for h in next(lector)]
+        except StopIteration:
+            return [], []
+
+        cabeceras = [normalizar_cabecera(h) for h in cabeceras_raw]
+        cabeceras_normalizadas = []
+        for cab in cabeceras:
+            if cab not in cabeceras_normalizadas:
+                cabeceras_normalizadas.append(cab)
+
+        for clave in extra_headers or []:
+            if clave not in cabeceras_normalizadas:
+                cabeceras_normalizadas.append(clave)
+
+        filas = []
+        for fila in lector:
+            if len(fila) < len(cabeceras):
+                fila += [""] * (len(cabeceras) - len(fila))
+            elif len(fila) > len(cabeceras):
+                fila = fila[: len(cabeceras) - 1] + [",".join(fila[len(cabeceras) - 1 :])]
+
+            datos = dict(zip(cabeceras, fila))
+            filas.append(datos)
+
+        return cabeceras_normalizadas, filas
+
+
+def leer_rrhh_csv():
+    cabeceras, filas = leer_csv(CSV_RRHH, extra_headers=["hora", "coordenadas"])
+    filas = [normalizar_fila_rrhh(f) for f in filas]
+    return cabeceras, filas
 
 # ---------------- AUTENTICACIÓN ----------------
 
@@ -76,10 +175,9 @@ def validar_credenciales(usuario, password):
         with open(CSV_RRHH, 'r', encoding='utf-8') as f:
 
             for row in csv.DictReader(f):
-
                 if (
                     row.get('usuario') == usuario
-                    and row.get('contraseña') == password
+                    and (row.get('contraseña') or row.get('password')) == password
                 ):
                     return True
 
@@ -155,25 +253,56 @@ def vigilancia():
 @app.route("/admin")
 @login_required
 def admin():
+    rrhh_headers, rrhh = leer_rrhh_csv()
+    vig_headers, vig = leer_csv(CSV_VIG)
 
-    rrhh = []
+    # Expandir columnas RRHH cuando un campo contiene valores separados por comas
+    def expandir_por_coma(headers, rows):
+        # Determinar cuántas partes máximo por cada header
+        max_partes = {}
+        for h in headers:
+            max_partes[h] = 1
+        for row in rows:
+            for h in headers:
+                val = row.get(h, "") or ""
+                partes = [p.strip() for p in str(val).split(",")] if val != "" else [""]
+                if len(partes) > max_partes.get(h, 1):
+                    max_partes[h] = len(partes)
 
-    if os.path.exists(CSV_RRHH):
+        # Construir headers expandidos
+        headers_expandidos = []
+        for h in headers:
+            if max_partes.get(h, 1) <= 1:
+                headers_expandidos.append(h)
+            else:
+                for i in range(max_partes[h]):
+                    headers_expandidos.append(f"{h}__{i}")
 
-        with open(CSV_RRHH, "r", encoding="utf-8") as f:
-            rrhh = list(csv.DictReader(f))
+        # Construir filas expandidas
+        filas_expandidas = []
+        for row in rows:
+            nueva = {}
+            for h in headers:
+                val = row.get(h, "") or ""
+                partes = [p.strip() for p in str(val).split(",")] if val != "" else [""]
+                if max_partes.get(h, 1) <= 1:
+                    nueva[h] = partes[0] if partes else ""
+                else:
+                    for i in range(max_partes[h]):
+                        nueva[f"{h}__{i}"] = partes[i] if i < len(partes) else ""
+            filas_expandidas.append(nueva)
 
-    vig = []
+        return headers_expandidos, filas_expandidas
 
-    if os.path.exists(CSV_VIG):
-
-        with open(CSV_VIG, "r", encoding="utf-8") as f:
-            vig = list(csv.DictReader(f))
+    rrhh_display_headers, rrhh_display = expandir_por_coma(rrhh_headers, rrhh)
 
     return render_template(
         "admin.html",
-        rrhh=rrhh,
-        vig=vig
+        rrhh=rrhh_display,
+        rrhh_headers=rrhh_display_headers,
+        vig=vig,
+        vig_headers=vig_headers,
+        header_labels=HEADER_LABELS
     )
 
 
