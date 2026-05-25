@@ -55,6 +55,14 @@ a:active,a:hover {
 </style>
 </head>
 <body>
+<div style="position:absolute;top:20px;right:20px;text-align:right;">
+  {% if session.usuario %}
+    <div style="font-size:14px;margin-bottom:8px;">Usuario: {{ session.usuario }}</div>
+    <a href="/logout" style="background:rgba(255,255,255,0.2);padding:10px 14px;border-radius:10px;">Cerrar sesión</a>
+  {% else %}
+    <a href="/login" style="background:rgba(255,255,255,0.2);padding:10px 14px;border-radius:10px;">Iniciar sesión</a>
+  {% endif %}
+</div>
 <h1>👁️ FaceID System</h1>
 <a href="/rrhh">➡ RRHH</a>
 <a href="/vigilancia">➡ Vigilancia</a>

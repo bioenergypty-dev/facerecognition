@@ -67,7 +67,13 @@ video,canvas{
 </head>
 <body>
 <div class="panel">
-<h2>🛡️ Vigilancia</h2>
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+  <h2>🛡️ Vigilancia</h2>
+  <div style="text-align:right;">
+    <a href="/">Inicio</a>
+    <a href="/logout">Cerrar sesión</a>
+  </div>
+</div>
 <input id="usuario" placeholder="Usuario">
 <button onclick="accion('ENTRADA')">⬅ ENTRADA</button>
 <button onclick="accion('SALIDA')">➡ SALIDA</button>
