@@ -1,5 +1,6 @@
 
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session
+app.secret_key = "supersecretkey"
 import os, cv2, csv, base64
 import numpy as np
 from datetime import datetime
@@ -16,6 +17,23 @@ from faceid_engine import procesar
 
 app = Flask(__name__)
 
+USERNAME = "admin"
+PASSWORD = "123456"
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if username == USERNAME and password == PASSWORD:
+            session["logged_in"] = True
+            return redirect(url_for("home"))
+
+        return render_template("login.html", error="Usuario o contraseña incorrectos")
+
+    return render_template("login.html")
+
 SESION_RRHH = {}  # Estado RRHH
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(BASE,"data")
@@ -29,8 +47,16 @@ os.makedirs(os.path.join(CAP,"vigilancia"),exist_ok=True)
 
 # -------------------- RUTAS --------------------
 @app.route("/")
-def index():
+def home():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
     return render_template("index.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 @app.route("/rrhh")
 def rrhh():
