@@ -256,45 +256,32 @@ def admin():
     rrhh_headers, rrhh = leer_rrhh_csv()
     vig_headers, vig = leer_csv(CSV_VIG)
 
-    # Expandir columnas RRHH cuando un campo contiene valores separados por comas
-    def expandir_por_coma(headers, rows):
-        # Determinar cuántas partes máximo por cada header
-        max_partes = {}
-        for h in headers:
-            max_partes[h] = 1
-        for row in rows:
-            for h in headers:
-                val = row.get(h, "") or ""
-                partes = [p.strip() for p in str(val).split(",")] if val != "" else [""]
-                if len(partes) > max_partes.get(h, 1):
-                    max_partes[h] = len(partes)
+    # Mantener solo las columnas solicitadas y con los encabezados exactos
+    mapping = [
+        ("numero_id", "Numero_ID"),
+        ("usuario", "Usuario"),
+        ("contraseña", "Password"),
+        ("nombre", "Nombre"),
+        ("apellidos", "Apellido"),
+        ("cargo", "Cargo"),
+        ("fecha_nacimiento", "Fecha_Nacimiento"),
+        ("fecha_alta", "Fecha_alta"),
+        ("hora", "Hora Captura"),
+        ("coordenadas", "Coordenadas"),
+    ]
 
-        # Construir headers expandidos
-        headers_expandidos = []
-        for h in headers:
-            if max_partes.get(h, 1) <= 1:
-                headers_expandidos.append(h)
-            else:
-                for i in range(max_partes[h]):
-                    headers_expandidos.append(f"{h}__{i}")
+    rrhh_display = []
+    for row in rrhh:
+        nueva = {}
+        for src, dst in mapping:
+            val = row.get(src, "") or ""
+            # Si contiene comas, tomar solo la primera parte
+            if isinstance(val, str) and "," in val:
+                val = val.split(",")[0].strip()
+            nueva[dst] = val
+        rrhh_display.append(nueva)
 
-        # Construir filas expandidas
-        filas_expandidas = []
-        for row in rows:
-            nueva = {}
-            for h in headers:
-                val = row.get(h, "") or ""
-                partes = [p.strip() for p in str(val).split(",")] if val != "" else [""]
-                if max_partes.get(h, 1) <= 1:
-                    nueva[h] = partes[0] if partes else ""
-                else:
-                    for i in range(max_partes[h]):
-                        nueva[f"{h}__{i}"] = partes[i] if i < len(partes) else ""
-            filas_expandidas.append(nueva)
-
-        return headers_expandidos, filas_expandidas
-
-    rrhh_display_headers, rrhh_display = expandir_por_coma(rrhh_headers, rrhh)
+    rrhh_display_headers = [dst for _, dst in mapping]
 
     return render_template(
         "admin.html",
