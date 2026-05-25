@@ -150,6 +150,11 @@ def leer_rrhh_csv():
     filas = [normalizar_fila_rrhh(f) for f in filas]
     return cabeceras, filas
 
+
+def leer_vig_csv():
+    cabeceras, filas = leer_csv(CSV_VIG, extra_headers=["estado"])
+    return cabeceras, filas
+
 # ---------------- AUTENTICACIÓN ----------------
 
 def login_required(func):
@@ -250,10 +255,44 @@ def vigilancia():
     return render_template("vigilancia.html")
 
 
+def map_rrhh_row(row):
+    mapping = [
+        ("numero_id", "Numero_ID"),
+        ("usuario", "Usuario"),
+        ("contraseña", "Password"),
+        ("nombre", "Nombre"),
+        ("apellidos", "Apellido"),
+        ("cargo", "Cargo"),
+        ("fecha_nacimiento", "Fecha_Nacimiento"),
+        ("fecha_alta", "Fecha_alta"),
+        ("hora", "Hora Captura"),
+        ("coordenadas", "Coordenadas"),
+    ]
+    salida = {}
+    for src, dst in mapping:
+        valor = row.get(src, "") or ""
+        if isinstance(valor, str) and "," in valor:
+            valor = valor.split(",")[0].strip()
+        salida[dst] = valor
+    return salida
+
+
+def map_vig_row(row):
+    mapping = [
+        ("usuario", "Usuario"),
+        ("evento", "Evento"),
+        ("fecha", "Fecha"),
+        ("estado", "Estado"),
+    ]
+    salida = {}
+    for src, dst in mapping:
+        salida[dst] = row.get(src, "") or ""
+    return salida
+
+
 @app.route("/admin")
 @login_required
 def admin():
-    # Cabeceras fijas para el panel de administración
     rrhh_display_headers = [
         "Numero_ID",
         "Usuario",
@@ -274,14 +313,50 @@ def admin():
         "Estado",
     ]
 
+    rrhh = [map_rrhh_row(r) for r in leer_rrhh_csv()[1]]
+    vig = [map_vig_row(v) for v in leer_vig_csv()[1]]
+
     return render_template(
         "admin.html",
-        rrhh=[],
+        rrhh=rrhh,
         rrhh_headers=rrhh_display_headers,
-        vig=[],
+        vig=vig,
         vig_headers=vig_headers,
         header_labels=HEADER_LABELS
     )
+
+
+@app.route("/admin_data")
+@login_required
+def admin_data():
+    rrhh_display_headers = [
+        "Numero_ID",
+        "Usuario",
+        "Password",
+        "Nombre",
+        "Apellido",
+        "Cargo",
+        "Fecha_Nacimiento",
+        "Fecha_alta",
+        "Hora Captura",
+        "Coordenadas",
+    ]
+    vig_headers = [
+        "Usuario",
+        "Evento",
+        "Fecha",
+        "Estado",
+    ]
+
+    rrhh = [map_rrhh_row(r) for r in leer_rrhh_csv()[1]]
+    vig = [map_vig_row(v) for v in leer_vig_csv()[1]]
+
+    return jsonify({
+        "rrhh_headers": rrhh_display_headers,
+        "rrhh": rrhh,
+        "vig_headers": vig_headers,
+        "vig": vig,
+    })
 
 
 @app.route("/download/<tipo>")
@@ -489,13 +564,15 @@ def vig_procesar():
                 w.writerow([
                     "usuario",
                     "evento",
-                    "fecha"
+                    "fecha",
+                    "estado"
                 ])
 
             w.writerow([
                 d["usuario"],
                 d["evento"],
-                datetime.now()
+                datetime.now(),
+                estado
             ])
 
     return jsonify({
