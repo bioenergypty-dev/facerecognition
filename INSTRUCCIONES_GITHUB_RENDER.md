@@ -40,7 +40,8 @@ cd "c:\Users\maryr\OneDrive\Escritorio\faceRecognition AntiSpoofing"
 5. Configuración:
    - **Build Command**: `pip install -r requirements.txt` (dejar vacío o por defecto)
    - **Start Command**: `bash start.sh`
-   - Python automaticamente usará 3.11.7 (definido en runtime.txt)
+   - **Nota**: El proyecto ahora incluye `Dockerfile` y `render.yaml` para desplegar con Docker en Render. Si ya usas Docker en Render, selecciona `env: docker` y `Dockerfile`.
+   - Python automaticamente usará 3.10.12 (definido en runtime.txt)
 6. Click en **"Create Web Service"**
 
 ## Paso 4: Deploy Automático
