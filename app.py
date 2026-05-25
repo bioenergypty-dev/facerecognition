@@ -253,41 +253,32 @@ def vigilancia():
 @app.route("/admin")
 @login_required
 def admin():
-    rrhh_headers, rrhh = leer_rrhh_csv()
-    vig_headers, vig = leer_csv(CSV_VIG)
-
-    # Mantener solo las columnas solicitadas y con los encabezados exactos
-    mapping = [
-        ("numero_id", "Numero_ID"),
-        ("usuario", "Usuario"),
-        ("contraseña", "Password"),
-        ("nombre", "Nombre"),
-        ("apellidos", "Apellido"),
-        ("cargo", "Cargo"),
-        ("fecha_nacimiento", "Fecha_Nacimiento"),
-        ("fecha_alta", "Fecha_alta"),
-        ("hora", "Hora Captura"),
-        ("coordenadas", "Coordenadas"),
+    # Cabeceras fijas para el panel de administración
+    rrhh_display_headers = [
+        "Numero_ID",
+        "Usuario",
+        "Password",
+        "Nombre",
+        "Apellido",
+        "Cargo",
+        "Fecha_Nacimiento",
+        "Fecha_alta",
+        "Hora Captura",
+        "Coordenadas",
     ]
 
-    rrhh_display = []
-    for row in rrhh:
-        nueva = {}
-        for src, dst in mapping:
-            val = row.get(src, "") or ""
-            # Si contiene comas, tomar solo la primera parte
-            if isinstance(val, str) and "," in val:
-                val = val.split(",")[0].strip()
-            nueva[dst] = val
-        rrhh_display.append(nueva)
-
-    rrhh_display_headers = [dst for _, dst in mapping]
+    vig_headers = [
+        "Usuario",
+        "Evento",
+        "Fecha",
+        "Estado",
+    ]
 
     return render_template(
         "admin.html",
-        rrhh=rrhh_display,
+        rrhh=[],
         rrhh_headers=rrhh_display_headers,
-        vig=vig,
+        vig=[],
         vig_headers=vig_headers,
         header_labels=HEADER_LABELS
     )
