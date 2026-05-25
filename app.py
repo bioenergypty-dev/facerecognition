@@ -149,18 +149,58 @@ def leer_rrhh_csv():
     if not os.path.exists(CSV_RRHH):
         return [], []
 
+    def _mask_commas_in_brackets(line):
+        out = []
+        in_bracket = False
+        for ch in line:
+            if ch == '[':
+                in_bracket = True
+                out.append(ch)
+            elif ch == ']':
+                in_bracket = False
+                out.append(ch)
+            elif ch == ',' and in_bracket:
+                out.append('##COMMA##')
+            else:
+                out.append(ch)
+        return ''.join(out)
+
     with open(CSV_RRHH, 'r', encoding='utf-8', newline='') as f:
-        lector = csv.DictReader(f)
-        if not lector.fieldnames:
-            return [], []
+        raw_lines = [l.rstrip('\n') for l in f if l.strip() != '']
 
-        cabeceras = [normalizar_cabecera(h) for h in lector.fieldnames]
-        lector.fieldnames = cabeceras
+    if not raw_lines:
+        return [], []
 
-        filas = []
-        for row in lector:
-            fila = {k: (v.strip() if v is not None else '') for k, v in row.items() if k}
-            filas.append(normalizar_fila_rrhh(fila))
+    masked_lines = [_mask_commas_in_brackets(l.lstrip('\ufeff')) for l in raw_lines]
+    lector = csv.reader(masked_lines)
+    try:
+        cabeceras_raw = [h.strip() for h in next(lector)]
+    except StopIteration:
+        return [], []
+
+    cabeceras = [normalizar_cabecera(h) for h in cabeceras_raw]
+
+    filas = []
+    for fila in lector:
+        # if there are more columns than headers, merge extras into last column
+        if len(fila) > len(cabeceras):
+            fila = fila[: len(cabeceras) - 1] + ["".join(fila[len(cabeceras) - 1 :])]
+
+        # pad if shorter
+        if len(fila) < len(cabeceras):
+            fila += [""] * (len(cabeceras) - len(fila))
+
+        datos = dict(zip(cabeceras, fila))
+
+        # restore commas inside bracketed coordenadas
+        if 'coordenadas' in datos and datos['coordenadas']:
+            datos['coordenadas'] = datos['coordenadas'].replace('##COMMA##', ',')
+            datos['coordenadas'] = datos['coordenadas'].strip()
+
+        # trim quotes and spaces on all fields
+        datos = {k: (v.strip().strip('"').strip("'") if isinstance(v, str) else v) for k, v in datos.items()}
+
+        filas.append(normalizar_fila_rrhh(datos))
 
     return cabeceras, filas
 
